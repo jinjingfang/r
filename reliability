@@ -1,0 +1,30 @@
+#calculate reliability omega
+library(lavaan)
+library(semTools)
+reliability(fit)
+
+#calculate confidence intervals
+library(ufs)
+library(MBESS)
+ci.reliability(data=Data, type = "omega")
+
+#using psych package to caculate reliability omega
+#SEM results of model (i.e., fit) should be generated previously
+
+lavInspect(fit, what="cor.ov")
+m<-lavInspect(fit, what="cor.ov")
+
+library(psych)
+omega(m,nfactors=3,fm="minres",n.iter=1,p=.05,poly=FALSE,key=NULL,
+      flip=TRUE,digits=2, title="Omega",sl=TRUE,labels=NULL,
+      plot=TRUE,n.obs=1154,rotate="oblimin",Phi=NULL,option="equal",covar=FALSE)
+
+omegaFromSem(fit,m=NULL, flip=TRUE,plot=TRUE)
+fit
+
+#calculate reliabitliy coefficient h
+install.packages("devtools")
+devtools::install_github("JonasMoss/reliable")
+
+library("reliable")
+coefficient_H(fit)
