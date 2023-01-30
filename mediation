@@ -1,0 +1,55 @@
+## using lm()
+library(lavaan)
+#Step1，自变量和因变量是否有显著关系
+model.0 <- lm(Y ~ X, myData)
+summary(model.0)
+
+#Step2, 自变量和中介变量是否有显著关系
+model.M <- lm(M ~ X, myData)
+summary(model.M)
+
+#Step3，自变量和中介变量的关系考虑进去之后，中介变量和因变量是否有显著关系
+model.Y <- lm(Y ~ X + M, myData)
+summary(model.Y)
+
+#用bootstrapping，看中介效应是否显著
+library(meidation)
+results <- mediate(model.M, model.Y, treat='X', mediator='M',
+                   boot=TRUE, sims=100)
+summary(results)
+
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
+
+## using latent variables
+model<-'
+#定义测量模型:
+#M等价于Anxiety这个潜在变量
+#Y等价于Affective Polarization这个潜在变量
+
+anxiety=~ax1+ax2+ax3
+affectpol=~pol1+pol2+pol3
+
+#定义X，Y，M之间的关系
+#M=a*X，等同于检验Step2
+anxiety~a*negcontact
+#Y=b*M
+affectpol~b*anxiety
+#Y=c*X，等同于检验Step1
+affectpol~c*negcontact
+
+#定义中介效应（indirect path），等同于检验Step3
+indirect:=a*b
+
+#定义整体效应（total effect）
+total=c+a*b
+'
+
+#跑一下，看看模型是否适配
+fit<-sem(model, data=data, stad.lv=T, se="boot", bootstrap=1000)
+
+#查看结果
+summary(fit, standardized=T,rsquare=T)
+
+#可以看到mediation的置信区间
+#置信区间不包括0，则中介效应显著
+parameterEstimates(fit)
