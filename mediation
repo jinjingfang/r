@@ -41,7 +41,7 @@ affectpol~c*negcontact
 indirect:=a*b
 
 #定义整体效应（total effect）
-total=c+a*b
+total:=c+a*b
 '
 
 #跑一下，看看模型是否适配
