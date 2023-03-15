@@ -1,0 +1,76 @@
+# This is an example of how to do latent profile analysis in R
+
+#Latent profile analysis
+
+#official intro: https://data-edu.github.io/tidyLPA/articles/Introduction_to_tidyLPA.html#software-approach-to-carrying-out-lpa-interface-to-mclust-and-to-mplus-
+
+#Reference page: https://rstudio-pubs-static.s3.amazonaws.com/553733_4d23ff5746ec4c8584969ce0768d6db5.html
+
+#Reference page 2: https://data-edu.github.io/tidyLPA/articles/Introduction_to_tidyLPA.html#software-approach-to-carrying-out-lpa-interface-to-mclust-and-to-mplus-
+
+#install.packages("nnet")
+#install.packages("knitr")
+#install.packages("tidyr")
+#install.packages("broom")
+#install.packages("tidyverse")
+#install.packages("devtools")
+#devtools::install_github("tidyverse/tidyr")
+
+library(tidyLPA)
+library(dplyr)
+options(dplyr.print_max = 999999999)
+
+LPAdata<-Data2022 %>%
+  select(Ej1, Ej2, Ag1, Ag2, Bo1, Bo2, Fr1, Fr2, Rx1, Rx2) %>%
+  single_imputation() %>%
+  scale() %>%
+  estimate_profiles(3)
+
+plot_profiles(LPAdata)
+
+#getting probability for the solution (this is a 3-class solution)
+probdata<-get_data(LPAdata)
+head(cbind(probdata$CPROB1,
+           probdata$CPROB2,
+           probdata$CPROB3))
+#appending probabilities to original dataset
+probdata<-probdata[, c("Class",
+                      "CPROB1",
+                      "CPROB2",
+                      "CPROB3")]
+classdata<-cbind(probdata, Data2022)
+
+#do some regression, library needed: nnet; knitr; tidyr; broom
+library(nnet)
+library(knitr)
+library(tidyr)
+library(broom)
+test <- multinom (Class~Year+Sex,
+                  data=classdata)
+tidy(test)
+kable(tidy(test), "simple",digits=2)
+#### here are something more: https://bookdown.org/yihui/rmarkdown-cookbook/kable.html
+#alignment: left, center, center, right, right
+#caption: regression result
+knitr::kable(tidy(test), format="simple",align = "lccrr",caption = "An example table caption.")
+
+get_fit(LPAdata)
+get_estimates(LPAdata)
+
+#using Mplus via R, tests include class 4 and 5
+LPAdata<-Data2022 %>%
+  select(Ej1, Ej2, Ag1, Ag2, Bo1, Bo2, Fr1, Fr2, Rx1, Rx2) %>%
+  single_imputation() %>%
+  scale() %>%
+  estimate_profiles(4,package = "MplusAutomation",
+                    variances = "equal",
+                    covariances = "zero")
+
+#compare models; not working in this case
+LPAdata<-Data2022 %>%
+  select(Ej1, Ej2, Bo1, Bo2, Fr1, Fr2) %>%
+  single_imputation() %>%
+  estimate_profiles(1:3,
+                    variances = c("equal","varying"),
+                    covariances = c("zero","varying")) %>%
+  compare_solutions(statistics=c("AIC","BIC"))
